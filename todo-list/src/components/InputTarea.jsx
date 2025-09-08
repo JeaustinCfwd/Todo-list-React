@@ -2,10 +2,9 @@ import React from 'react'
 
 const InputTarea = () => {
   return (
-    <div>
-      <input type="text" placeholder='Ingrese la tarea'/>
-      <input type="text" placeholder='Ingrese la descripción de la tarea'/>
-      <button>Agregar</button>
+    <div className='form-group'>
+      <input className='input-form' type="text" placeholder='Ingrese la tarea'/>
+      <button className='button-form'>Agregar</button>
     </div>
   )
 }
