@@ -13,7 +13,7 @@ const InputTarea = ({ onAddTask, showAlert }) => {
       onAddTask(newTask);
       setInput("");
     } else {
-      showAlert("Por favor ingresa una tarea válida");
+      showAlert("Ingrese un texto");
     }
   };
 
