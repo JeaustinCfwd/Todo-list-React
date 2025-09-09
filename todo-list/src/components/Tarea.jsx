@@ -1,13 +1,27 @@
 import React from 'react'
 
-const Tarea = () => {
+const Tarea = ({ task, onToggleComplete, onDeleteTask }) => {
   return (
-    <div>
-     <h3>nombre tarea</h3>
-     <p>Descripcion</p>
-     <span>08-09 --- 11:30</span>
+    <div className={`list-item ${task.completed ? 'completed' : ''}`}>
+      <div className="task-content">
+        <input 
+          className='list2' 
+          type="checkbox" 
+          checked={task.completed} 
+          onChange={() => onToggleComplete(task.id)} 
+        />
+        <span className={`task-text ${task.completed ? 'completed-text' : ''}`}>
+          {task.text}
+        </span>
+      </div>
+      <button 
+        onClick={() => onDeleteTask(task.id)} 
+        className='button-delete'
+      >
+        Eliminar
+      </button>
     </div>
-  )
+  );
 }
 
 export default Tarea
