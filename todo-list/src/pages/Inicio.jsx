@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import InputTarea from '../components/InputTarea'
 import ListaTareas from '../components/ListaTareas'
+import AnimatedBirds from '../components/AnimatedBirds'
 import '../styles/TodoApp.css'
+import '../styles/AnimatedBirds.css'
 
 const API_URL = 'http://localhost:3001/tasks'
 
@@ -86,8 +88,10 @@ const Inicio = () => {
 
   return (
     <div className="fondo">
+      <AnimatedBirds />
+      
       <div className="todo-container">
-        <h1 className="todo-title">📝 Mi Lista de Tareas</h1>
+        <h1 className="todo-title">TodoList</h1>
         {alert && <div className="alert">{alert}</div>}
         {tasks.length > 0 && (
           <div className="tasks-counter">
