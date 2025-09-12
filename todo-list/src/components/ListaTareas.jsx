@@ -1,7 +1,7 @@
 import React from 'react'
 import Tarea from './Tarea'
 
-const ListaTareas = ({ tasks, onToggleComplete, onDeleteTask }) => {
+const ListaTareas = ({ tasks, onToggleComplete, onDeleteTask, onUpdateTask }) => {
   if (tasks.length === 0) {
     return <div className="empty-state">No existen tareas</div>
   }
@@ -14,6 +14,7 @@ const ListaTareas = ({ tasks, onToggleComplete, onDeleteTask }) => {
           task={task}
           onToggleComplete={onToggleComplete}
           onDeleteTask={onDeleteTask}
+          onUpdateTask={onUpdateTask}
         />
       ))}
     </div>
