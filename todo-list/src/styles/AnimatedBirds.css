@@ -36,7 +36,7 @@
    left: -10%;
    transform: scale(0) translateX(-10vw);
    will-change: transform;
-   z-index: 0; /* Detrás del contenido */
+   z-index: 0;
    
    animation-name: fly-right-one;
    animation-timing-function: linear;

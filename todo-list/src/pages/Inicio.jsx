@@ -1,3 +1,4 @@
+// Inicio.jsx
 import React, { useState, useEffect } from 'react'
 import InputTarea from '../components/InputTarea'
 import ListaTareas from '../components/ListaTareas'
@@ -13,11 +14,14 @@ const Inicio = () => {
 
   useEffect(() => { fetchTasks() }, [])
 
+  // CAMBIO: helper para comparar ids sin importar si vienen como string o número
+  const sameId = (a, b) => String(a) === String(b)
+
   const fetchTasks = async () => {
     try {
-      const response = await fetch(API_URL)
+      const response = await fetch(API_URL, { headers: { Accept: 'application/json' } }) // CAMBIO: Accept para claridad
       const data = await response.json()
-      setTasks(data)
+      setTasks(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error('Error al cargar tareas:', error)
     }
@@ -25,23 +29,28 @@ const Inicio = () => {
 
   const addTask = async (newTask) => {
     try {
+      // CAMBIO: aseguramos que no se envíe un id generado en el cliente
+      const taskToSend = { ...newTask }
+      delete taskToSend.id
+
       const response = await fetch(API_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newTask),
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, // CAMBIO: headers explícitos
+        body: JSON.stringify(taskToSend),
       })
       if (response.ok) {
         const savedTask = await response.json()
-        setTasks([...tasks, savedTask])
+        // CAMBIO: usamos la tarea devuelta por el servidor (con su id real)
+        setTasks(prev => [...prev, savedTask])
         setAlert('')
       } else {
-        setTasks([...tasks, newTask])
-        setAlert('')
+        // CAMBIO: no agregamos localmente si el servidor falla para evitar ids inexistentes
+        setAlert('No se pudo guardar la tarea en el servidor')
       }
     } catch (error) {
       console.error('Error al agregar tarea:', error)
-      setTasks([...tasks, newTask])
-      setAlert('')
+      // CAMBIO: no agregamos localmente si hay error de red
+      setAlert('Error de conexión con el servidor')
     }
   }
 
@@ -51,36 +60,69 @@ const Inicio = () => {
   }
 
   const toggleComplete = async (taskId) => {
-    const taskToUpdate = tasks.find(task => task.id === taskId)
+    // CAMBIO: localizar la tarea comparando ids por string para evitar desajustes de tipo
+    const taskToUpdate = tasks.find(task => sameId(task.id, taskId))
+    if (!taskToUpdate) {
+      // CAMBIO: si no existe en estado, sincronizamos y salimos
+      await fetchTasks()
+      showAlert('La tarea no existe en el estado. Sincronizando…')
+      return
+    }
+
+    // CAMBIO: usar exactamente el id tal como viene del backend para construir la URL
+    const idForUrl = taskToUpdate.id
     const updatedTask = { ...taskToUpdate, completed: !taskToUpdate.completed }
+
     try {
-      const response = await fetch(`${API_URL}/${taskId}`, {
+      const response = await fetch(`${API_URL}/${encodeURIComponent(idForUrl)}`, { // CAMBIO: encodeURIComponent por seguridad
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify(updatedTask),
       })
       if (response.ok) {
-        setTasks(tasks.map(task => task.id === taskId ? updatedTask : task))
+        setTasks(tasks.map(task => sameId(task.id, idForUrl) ? updatedTask : task))
+      } else if (response.status === 404) {
+        // CAMBIO: si 404, re-sincronizamos con el backend
+        showAlert('La tarea no existe en el servidor (404). Sincronizando…')
+        await fetchTasks()
       } else {
-        setTasks(tasks.map(task => task.id === taskId ? { ...task, completed: !task.completed } : task))
+        showAlert('No se pudo actualizar la tarea en el servidor')
       }
     } catch (error) {
       console.error('Error al actualizar tarea:', error)
-      setTasks(tasks.map(task => task.id === taskId ? { ...task, completed: !task.completed } : task))
+      showAlert('Error de conexión al actualizar')
     }
   }
 
   const deleteTask = async (taskId) => {
+    // CAMBIO: localizar la tarea por igualdad de string en el estado
+    const taskToDelete = tasks.find(task => sameId(task.id, taskId))
+    if (!taskToDelete) {
+      await fetchTasks()
+      showAlert('La tarea no existe en el estado. Sincronizando…')
+      return
+    }
+
+    // CAMBIO: usar el id exactamente como lo devuelve el backend
+    const idForUrl = taskToDelete.id
+
     try {
-      const response = await fetch(`${API_URL}/${taskId}`, { method: 'DELETE' })
+      const response = await fetch(`${API_URL}/${encodeURIComponent(idForUrl)}`, {
+        method: 'DELETE',
+        headers: { Accept: 'application/json' },
+      })
       if (response.ok) {
-        setTasks(tasks.filter(task => task.id !== taskId))
+        setTasks(tasks.filter(task => !sameId(task.id, idForUrl)))
+      } else if (response.status === 404) {
+        // CAMBIO: si 404, sincronizamos para limpiar cualquier desfase
+        showAlert('La tarea ya no existe en el servidor (404). Sincronizando…')
+        await fetchTasks()
       } else {
-        setTasks(tasks.filter(task => task.id !== taskId))
+        showAlert('No se pudo eliminar la tarea en el servidor')
       }
     } catch (error) {
       console.error('Error al eliminar tarea:', error)
-      setTasks(tasks.filter(task => task.id !== taskId))
+      showAlert('Error de conexión al eliminar')
     }
   }
 
@@ -89,7 +131,6 @@ const Inicio = () => {
   return (
     <div className="fondo">
       <AnimatedBirds />
-      
       <div className="todo-container">
         <h1 className="todo-title">TodoList</h1>
         {alert && <div className="alert">{alert}</div>}
